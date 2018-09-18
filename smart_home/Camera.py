@@ -176,7 +176,7 @@ class CameraData:
                     pass
         return vpn_url, local_url
 
-    def personsAtHome(self, home=None):
+    def personsAtHome(self, home=None, detailed=False):
         """
         Return the list of known persons who are currently at home
         """
@@ -184,12 +184,17 @@ class CameraData:
             home = self.default_home
         home_data = self.homeByName(home)
         atHome = []
+        atHomeDetailed = []
         for p in home_data['persons']:
             # Only check known persons
             if 'pseudo' in p:
                 if not p["out_of_sight"]:
                     atHome.append(p['pseudo'])
-        return atHome
+                    atHomeDetailed.append(p)
+        if not detailed:
+            return atHome
+        else:
+            return atHomeDetailed
 
     def getCameraPicture(self, image_id, key):
         """
@@ -263,7 +268,7 @@ class CameraData:
                 self.outdoor_lastEvent[camera] = self.outdoor_events[camera][
                         sorted(self.outdoor_events[camera])[-1]]
 
-    def personSeenByCamera(self, name, home=None, camera=None, exclude=0):
+    def personSeenByCamera(self, name, home=None, camera=None, exclude=0, detailed=False):
         """
         Return True if a specific person has been seen by a camera
         """
@@ -284,12 +289,18 @@ class CameraData:
                     person_id = self.events[cam_id][time_ev]['person_id']
                     if 'pseudo' in self.persons[person_id]:
                         if self.persons[person_id]['pseudo'] == name:
-                            return True
+                            if not detailed:
+                                return True
+                            else:
+                                return self.persons[person_id]
         elif self.lastEvent[cam_id]['type'] == 'person':
             person_id = self.lastEvent[cam_id]['person_id']
             if 'pseudo' in self.persons[person_id]:
                 if self.persons[person_id]['pseudo'] == name:
-                    return True
+                    if not detailed:
+                        return True
+                    else:
+                        return self.persons[person_id]
         return False
 
     def _knownPersons(self):
@@ -305,7 +316,7 @@ class CameraData:
             names.append(p['pseudo'])
         return names
 
-    def someoneKnownSeen(self, home=None, camera=None, exclude=0):
+    def someoneKnownSeen(self, home=None, camera=None, exclude=0, detailed=False):
         """
         Return True if someone known has been seen
         """
@@ -325,11 +336,17 @@ class CameraData:
                 elif self.events[cam_id][time_ev]['type'] == 'person':
                     if self.events[cam_id][time_ev][
                             'person_id'] in self._knownPersons():
-                        return True
+                        if not detailed:
+                            return True
+                        else:
+                            return self.events[cam_id][time_ev]['person_id']
         # Check in the last event is someone known has been seen
         elif self.lastEvent[cam_id]['type'] == 'person':
             if self.lastEvent[cam_id]['person_id'] in self._knownPersons():
-                return True
+                if not detailed:
+                    return True
+                else:
+                    return self.lastEvent[cam_id]['person_id']
         return False
 
     def someoneUnknownSeen(self, home=None, camera=None, exclude=0):
